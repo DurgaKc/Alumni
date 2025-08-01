@@ -14,32 +14,36 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { IoIosAdd } from "react-icons/io";
-import { Link } from "react-router-dom";
 import EditWork from "./EditWork";
 import AddWork from "./AddWork";
 import Batchmate from "../Profile/Batchmate";
-const works = [
-  {
-    office_name: "Debugsoft",
-    office_address: "Lalitpur",
-    office_email: "dbug.mgmt@gmail.com",
-    position: "Developer",
-    added_by: "Rosan",
-    duration: "2 years",
-  },
-  {
-    office_name: "Debugsoft",
-    office_address: "Kupondole",
-    office_email: "dibugsoft.mgmt@gmail.com",
-    position: "Developer",
-    added_by: "Rosan",
-    duration: "2 years",
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { useAlumni } from "../../../context/AlumniContext";
+
+const backendUrl = import.meta.env.VITE_BACKEND_URL;
+const imageUrl = import.meta.env.VITE_UPLOAD_URL;
+
+const AlumniLoader = () => {
+  const { setAlumniStudentId } = useAlumni();
+}
 
 const WorkList = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openAddWorkDialog, setOpenAddWorkDialog] = useState(false);
+
+  //get data using react-query
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["AlumniEmployee"],
+    queryFn: () => axios.get(`${backendUrl}/AlumniEmployee`)
+  });
+  if (isLoading) {
+    return <div>Page is Loading...</div>;
+  }
+  if (isError) {
+    return <div>{error.message}</div>;
+  }
+  console.log(data)
 
   // for edit dialog
   const handleEditClick = (id) => {
@@ -57,8 +61,8 @@ const WorkList = () => {
   };
   return (
     <>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={7.6}>
+      <Grid container spacing={3} className="px-6">
+        <Grid item xs={12} md={8}>
           <Typography
             variant="h5"
             gutterBottom
@@ -67,7 +71,6 @@ const WorkList = () => {
               color: "rgb(43, 110, 181)",
               display: "flex",
               justifyContent: "center",
-             
             }}
           >
             Work Experience List
@@ -84,13 +87,13 @@ const WorkList = () => {
                 fontWeight: 500,
                 paddingY: "4px",
                 paddingX: "12px",
-                marginBottom:"5px"
+                marginBottom: "5px",
               }}
             >
               Add Work
             </Button>
           </Box>
-          <TableContainer component={Paper} sx={{  mx: "20px" }}>
+          <TableContainer component={Paper}>
             <Table>
               <TableHead sx={{ backgroundColor: "rgb(43, 110, 181)" }}>
                 <TableRow>
@@ -162,9 +165,9 @@ const WorkList = () => {
                       padding: "4px",
                     }}
                   >
-                    Duration
+                    WorkingStatus
                   </TableCell>
-                  
+
                   <TableCell
                     align="left"
                     sx={{
@@ -178,8 +181,18 @@ const WorkList = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {works.map(
-                  ({ office_name, office_address, office_email, position, added_by, duration }, index) => (
+                {data?.data.map(
+                  (
+                    {
+                      organizationName,
+                      officeAddress,
+                      officeEmail,
+                      designation,
+                      createdBy,
+                      workingStatus,
+                    },
+                    index
+                  ) => (
                     <TableRow key={index}>
                       <TableCell
                         align="left"
@@ -191,37 +204,37 @@ const WorkList = () => {
                         align="left"
                         sx={{ border: "1px solid #c2c2c2", padding: "6px" }}
                       >
-                        {office_name}
+                        {organizationName}
                       </TableCell>
-                       <TableCell
+                      <TableCell
                         align="left"
                         sx={{ border: "1px solid #c2c2c2", padding: "6px" }}
                       >
-                        {office_address}
+                        {officeAddress}
                       </TableCell>
-                       <TableCell
+                      <TableCell
                         align="left"
                         sx={{ border: "1px solid #c2c2c2", padding: "6px" }}
                       >
-                        {office_email}
+                        {officeEmail}
                       </TableCell>
                       <TableCell
                         align="left"
                         sx={{ border: "1px solid #c2c2c2", padding: "4px" }}
                       >
-                        {position}
+                        {designation}
                       </TableCell>
                       <TableCell
                         align="left"
                         sx={{ border: "1px solid #c2c2c2", padding: "4px" }}
                       >
-                        {added_by}
+                        {createdBy}
                       </TableCell>
                       <TableCell
                         align="left"
                         sx={{ border: "1px solid #c2c2c2", padding: "4px" }}
                       >
-                        {duration}
+                        {workingStatus}
                       </TableCell>
                       <TableCell
                         align="left"
@@ -255,7 +268,7 @@ const WorkList = () => {
             onClose={handleCloseAddWorkDialog}
             maxWidth
           >
-            <AddWork />
+            <AddWork onClose={handleCloseAddWorkDialog} />
           </Dialog>
           {/* edit */}
           <Dialog
@@ -266,8 +279,8 @@ const WorkList = () => {
             <EditWork />
           </Dialog>
         </Grid>
-        <Grid item xs={12} md={4.2}   sx={{marginX:"10px"}}>
-          <Batchmate/>
+        <Grid item xs={12} md={4}>
+          <Batchmate />
         </Grid>
       </Grid>
     </>

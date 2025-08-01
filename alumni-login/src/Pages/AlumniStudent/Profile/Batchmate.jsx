@@ -1,4 +1,4 @@
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Grid, Paper, Typography } from "@mui/material";
 import { MdEmail } from "react-icons/md";
 import { FaPhoneAlt } from "react-icons/fa";
 
@@ -20,18 +20,20 @@ const Batchmate = () => {
 
   return (
     <>
-      <Typography
+     <Grid>
+       <Typography
         variant="h5"
         gutterBottom
         sx={{
           mt: 4,
-          color: "rgb(43, 110, 181)",
+          // color: "rgb(43, 110, 181)",
           display: "flex",
           justifyContent: "center",
           
         }}
+        className=" rounded-xl p-2 bg-gray-200"
       >
-        Batchmate List
+        2080 Batchmate
       </Typography>
 
       {batchmates.map((mate, index) => (
@@ -42,8 +44,8 @@ const Batchmate = () => {
               sx={{
                 cursor: "pointer",
                 "& img": {
-                  height: 50,
-                  width: 50,
+                  height: 60,
+                  width: 60,
                   borderRadius: "50%",
                   objectFit: "cover",
                   "&:hover": {
@@ -57,25 +59,26 @@ const Batchmate = () => {
 
             {/* Info */}
             <Box>
-              <Typography variant="body1" className="text-gray-700">
+              <Typography className="text-gray-700">
                 {mate.name}
               </Typography>
 
               <Box display="flex" gap={2} flexWrap="wrap">
                 <Box display="flex" alignItems="center" gap={1}>
-                  <FaPhoneAlt className="text-gray-500" />
-                  <Typography className="text-gray-500">{mate.phone}</Typography>
+                  <FaPhoneAlt className="text-gray-500 text-sm" />
+                  <Typography className="text-gray-500 italic">{mate.phone}</Typography>
                 </Box>
 
                 <Box display="flex" alignItems="center" gap={1}>
-                  <MdEmail className="text-gray-500" />
-                  <Typography className="text-gray-500">{mate.email}</Typography>
+                  <MdEmail className="text-gray-500 " />
+                  <Typography className="text-gray-500 italic" >{mate.email}</Typography>
                 </Box>
               </Box>
             </Box>
           </Box>
         </Paper>
       ))}
+     </Grid>
     </>
   );
 };
