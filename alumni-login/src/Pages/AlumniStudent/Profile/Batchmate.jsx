@@ -26,12 +26,12 @@ const Batchmate = () => {
         gutterBottom
         sx={{
           mt: 4,
-          // color: "rgb(43, 110, 181)",
+          color: "#fff",
           display: "flex",
           justifyContent: "center",
           
         }}
-        className=" rounded-xl p-2 bg-gray-200"
+        className="rounded-xl p-2 bg-[#2B6EB5]"
       >
         2080 Batchmate
       </Typography>

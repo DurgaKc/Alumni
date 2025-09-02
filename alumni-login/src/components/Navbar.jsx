@@ -16,7 +16,7 @@ const Navbar = () => {
         <Box>
           <div className="flex flex-wrap items-center justify-between w-full px-6 py-1">
             {/* Left Side: Logo + Campus address */}
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center">
               <div className="logo w-32">
                 <img src="/tulogo.png" className="h-24 w-24" alt="TU Logo" />
               </div>

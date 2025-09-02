@@ -18,47 +18,66 @@ import EditWork from "./EditWork";
 import AddWork from "./AddWork";
 import Batchmate from "../Profile/Batchmate";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { AlumniEmployeeService } from "../../../services/ApiServices";
+import DeleteWork from "./DeleteWork";
+import { fetchGraduationData } from "../../../services/graduationService";
 import { useAlumni } from "../../../context/AlumniContext";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-const imageUrl = import.meta.env.VITE_UPLOAD_URL;
-
-const AlumniLoader = () => {
-  const { setAlumniStudentId } = useAlumni();
-}
+// const imageUrl = import.meta.env.VITE_UPLOAD_URL;
 
 const WorkList = () => {
+  const {currentUser, alumniStudentId} = useAlumni()
+  console.log(alumniStudentId)
+  
+  console.log(currentUser)
   const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openAddWorkDialog, setOpenAddWorkDialog] = useState(false);
+  const [id, setId] = useState(0);
 
+
+  //Fetch graduation data  to get applicantname
+  const {data:graduationData}= useQuery({
+    queryKey:["graduationData"],
+    queryFn: fetchGraduationData,
+  });
+  const graduation = graduationData?.[0]; 
   //get data using react-query
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["AlumniEmployee"],
-    queryFn: () => axios.get(`${backendUrl}/AlumniEmployee`)
+    queryKey: ["AlumniEmployee",alumniStudentId],
+    queryFn: () => AlumniEmployeeService.getByGraduationId(alumniStudentId).then((res) => res.data),
   });
+  // console.log(alumniStudentId)
   if (isLoading) {
     return <div>Page is Loading...</div>;
   }
   if (isError) {
     return <div>{error.message}</div>;
   }
-  console.log(data)
-
   // for edit dialog
   const handleEditClick = (id) => {
+    setId(id);
     setOpenEditDialog(true);
   };
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
   };
+  //for delete dialog
+  const handleDeleteClick = (id) => {
+    setId(id);
+    setOpenDeleteDialog(true);
+  };
+  const handleCloseDeleteDialog = () => {
+    setOpenDeleteDialog(false);
+  };
   // for add work dialog
-  const handleAddWorkClick = (id) => {
+  const handleAddWorkClick = () => {
     setOpenAddWorkDialog(true);
   };
-  const handleCloseAddWorkDialog = (id) => {
+  const handleCloseAddWorkDialog = () => {
     setOpenAddWorkDialog(false);
   };
+  console.log(data);
   return (
     <>
       <Grid container spacing={3} className="px-6">
@@ -73,7 +92,7 @@ const WorkList = () => {
               justifyContent: "center",
             }}
           >
-            Work Experience List
+            My working history
           </Typography>
           <Box display="flex" justifyContent="flex-end">
             <Button
@@ -181,9 +200,10 @@ const WorkList = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.data.map(
+                {data?.map(
                   (
                     {
+                      id,
                       organizationName,
                       officeAddress,
                       officeEmail,
@@ -243,16 +263,30 @@ const WorkList = () => {
                         <Box display="flex" justifyContent="center">
                           <Button
                             variant="outlined"
-                            onClick={handleEditClick}
+                            onClick={() => handleEditClick(id)}
                             sx={{
                               color: "#2B6EB5",
                               borderColor: "#2B6EB5",
                               textTransform: "none",
                               fontWeight: 500,
-                              paddingY: "1px",
+                              padding: "0.5px",
                             }}
                           >
                             edit
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            onClick={() => handleDeleteClick(id)}
+                            sx={{
+                              color: "#e13a27",
+                              borderColor: "#e13a27",
+                              textTransform: "none",
+                              fontWeight: 500,
+                              padding: "1px",
+                              marginLeft: "5px",
+                            }}
+                          >
+                            delete
                           </Button>
                         </Box>
                       </TableCell>
@@ -268,7 +302,10 @@ const WorkList = () => {
             onClose={handleCloseAddWorkDialog}
             maxWidth
           >
-            <AddWork onClose={handleCloseAddWorkDialog} />
+            <AddWork 
+            onClose={handleCloseAddWorkDialog}
+            applicantName={graduation?.applicantNameEng}
+             />
           </Dialog>
           {/* edit */}
           <Dialog
@@ -276,7 +313,15 @@ const WorkList = () => {
             onClose={handleCloseEditDialog}
             maxWidth
           >
-            <EditWork />
+            <EditWork id={id} onClose={handleCloseEditDialog} />
+          </Dialog>
+          {/* delete */}
+          <Dialog
+            open={openDeleteDialog}
+            onClose={handleCloseDeleteDialog} 
+            maxWidth
+          >
+            <DeleteWork id={id} onClose={handleCloseDeleteDialog} />
           </Dialog>
         </Grid>
         <Grid item xs={12} md={4}>

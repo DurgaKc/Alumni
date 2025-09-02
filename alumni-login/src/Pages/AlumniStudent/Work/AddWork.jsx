@@ -16,14 +16,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useAlumni } from "../../../context/AlumniContext";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-const AddWork = ({ onClose }) => {
-  const queryClient = useQueryClient();
-  const refetch = () => queryClient.invalidateQueries([alumni]);
+const AddWork = ({ onClose, loading }) => {
+  const { alumniStudentId, applicantNameEng } = useAlumni();
 
-  
+  const queryClient = useQueryClient();
+  const refetch = () => queryClient.invalidateQueries([alumniStudentId]);
+
   const [formData, setFormData] = useState({
     OrganizationName: "",
     Designation: "",
@@ -36,33 +38,55 @@ const AddWork = ({ onClose }) => {
     OfficeAddress: "",
     OfficeUrl: "",
     WorkingStatus: "",
-    JoiningLetter: "",
+    JoiningLetter: null, 
     JoingDate: "",
     WorkingTillDate: "",
     Remarks: "",
   });
 
+  const [errors, setErrors] = useState({
+    OfficePhone: false,
+  });
+
   // Mutation for posting data
   const mutation = useMutation({
-    mutationFn: (formData) => 
-      axios.post(`${backendUrl}/AlumniEmployee/Create`, formData),
+    mutationFn: (formDataToSend) =>
+      axios.post(`${backendUrl}/AlumniEmployee/Create`, formDataToSend, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }),
     onSuccess: () => {
-      toast.success("Work detail added successfully!")
+      toast.success("Work detail added successfully!");
       refetch();
+      onClose();
     },
-     onError: (error) => {
-    toast.error("Failed to add work detail.");
-    console.error(error);
-  }
+    onError: (error) => {
+      toast.error("Failed to add work detail.");
+      console.error("Error creating alumni employee:", error);
+    },
   });
 
   const handleInputChange = (e) => {
-    const { name, value, type, files  } = e.target;
+    const { name, value, type, files } = e.target;
+
+    if (name === "OfficePhone") {
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numericValue,
+      }));
+      setErrors((prev) => ({
+        ...prev,
+        OfficePhone: numericValue.length > 0 && numericValue.length !== 10,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "file" ? files[0] : value,
     }));
   };
+
   const handleSelectChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -70,11 +94,44 @@ const AddWork = ({ onClose }) => {
       [name]: value,
     }));
   };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    mutation.mutate(formData);
-    console.log("Form Data Before Submit:", formData);
+    if (loading || !alumniStudentId) {
+      toast.error("Alumni data not loaded yet");
+      return;
+    }
+
+    const formDataToSend = new FormData();
+
+    // ✅ Correct mapping to backend API schema
+    formDataToSend.append("GraduationApplicationId", alumniStudentId);
+    formDataToSend.append("OrganizationName", formData.OrganizationName);
+    formDataToSend.append("Designation", formData.Designation);
+    formDataToSend.append("OfficeEmail", formData.OfficeEmail);
+    formDataToSend.append("OfficePhone", formData.OfficePhone);
+    formDataToSend.append("Province", formData.Province);
+    formDataToSend.append("District", formData.District);
+    formDataToSend.append("LocalLevel", formData.LocalLevel);
+    formDataToSend.append(
+      "WardNo",
+      formData.WardNo ? parseInt(formData.WardNo) : 0
+    ); 
+    formDataToSend.append("OfficeAddress", formData.OfficeAddress);
+    formDataToSend.append("OfficeUrl", formData.OfficeUrl);
+    formDataToSend.append("WorkingStatus", formData.WorkingStatus);
+
+    if (formData.JoiningLetter) {
+      formDataToSend.append("JoiningLetter", formData.JoiningLetter);
+    }
+
+    formDataToSend.append("JoingDate", formData.JoingDate || "");
+    formDataToSend.append("WorkingTillDate", formData.WorkingTillDate || "");
+    formDataToSend.append("Remarks", formData.Remarks);
+
+    mutation.mutate(formDataToSend);
   };
+
   const handleClear = () => {
     setFormData({
       OrganizationName: "",
@@ -88,7 +145,7 @@ const AddWork = ({ onClose }) => {
       OfficeAddress: "",
       OfficeUrl: "",
       WorkingStatus: "",
-      JoiningLetter: "",
+      JoiningLetter: null,
       JoingDate: "",
       WorkingTillDate: "",
       Remarks: "",
@@ -113,16 +170,16 @@ const AddWork = ({ onClose }) => {
         <Typography
           variant="h5"
           gutterBottom
-          style={{
-            marginTop: "10px",
+          sx={{
+            mt: 2,
             color: "rgb(43, 110, 181)",
             display: "flex",
             justifyContent: "center",
+            fontWeight: "bold",
           }}
         >
-          <h1 style={{}}>
-            Adding working detail of &nbsp; <strong> Employee Name</strong>
-          </h1>
+          Adding working detail of&nbsp;
+          <strong>{applicantNameEng}</strong>
         </Typography>
 
         <Grid container spacing={2} className="mt-10">
@@ -166,6 +223,13 @@ const AddWork = ({ onClose }) => {
               value={formData.OfficePhone}
               onChange={handleInputChange}
               size="small"
+              inputProps={{
+                maxLength: 10,
+                inputMode: "numeric",
+                pattern: "[0-9]{10}",
+              }}
+              error={errors.OfficePhone}
+              helperText={errors.OfficePhone ? "Number must be 10 digits" : ""}
               fullWidth
               required
             />
@@ -186,9 +250,9 @@ const AddWork = ({ onClose }) => {
           </Grid>
           <Grid item xs={12} sm={4} md={3}>
             <FormControl required fullWidth size="small">
-              <InputLabel>district</InputLabel>
+              <InputLabel>District</InputLabel>
               <Select
-                label="district"
+                label="District"
                 name="District"
                 value={formData.District}
                 onChange={handleSelectChange}
@@ -221,8 +285,8 @@ const AddWork = ({ onClose }) => {
                 value={formData.WardNo}
                 onChange={handleSelectChange}
               >
-                <MenuItem value="4">4</MenuItem>
-                <MenuItem value="5">5</MenuItem>
+                <MenuItem value={4}>4</MenuItem>
+                <MenuItem value={5}>5</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -270,12 +334,10 @@ const AddWork = ({ onClose }) => {
               size="small"
               name="JoiningLetter"
               onChange={handleInputChange}
-              accept="image/*"
+              accept="image/*,application/pdf"
               label="Joining Letter"
               InputLabelProps={{ shrink: true }}
-              // inputProps={{accept:"application/pdf"}}
               fullWidth
-              required
             />
           </Grid>
           <Grid item xs={12} sm={3.5} md={3}>
